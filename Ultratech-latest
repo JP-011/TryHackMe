@@ -1,0 +1,61 @@
+ Ultratech-latest 
+Step -1: Enter the Ultratech room by using the following link: https://tryhackme.com/r/room/ultratech1 
+
+Task -1 
+Deploy the machine 
+
+Read the instruction of the mission and start the target machine using the start machine buttonon the top right. 
+By clicking on ? icon you can download Openvpn configuration file which helps you in connecting and accessing into targets VPN connection. 
+From here we can get target IP: 10.10.85.42 and Title: Ultratech-latest 
+
+Task -2 
+It's enumeration time! 
+
+Perform nmap scan on the target which helps to find all the open ports and services running. 
+sudo nmap 10.10.85.42 -Pn -n -p- -sV --min-rate 5000 
+
+2.1 Which software is using the port 8081? 
+With the above scan it is clearly mention that N***.** software is using port 8081. 
+2.2 Which other non-standard port is used? 
+Non-standard port means using a customized port which is not well-known here port ***** is non-standard port. 
+2.3 Which software using this port? 
+From the same it is mentioned that A****** software is using 31331 port. 
+2.4 Which GNU/Linux distribution seems to be used? 
+It is mentioned in the scan that Linux distribution used is U***** 
+2.5 The software using the port 8081 is a REST api, how many of its routes are used by the web application? 
+From the below view source there are * routes for web application. 
+
+Task - 3 
+Let the fun begin 
+
+Let's run dirbuster scan on port 8081 sudo dirb http://10.10.85.42:31331 we found robots.txt as a file in the above location, from where we can find a new file "utech_sitemap.txt".
+When we go deeper in to the file "/partners.html" is a html file with some interesting information. 
+Entering into the .html file we can see a login page, see the view source page, you can find a new file "js/api.js" which shows a famous command injection vulnerability with ping. 
+
+Now try, http://10.10.85.42:8081/ping?ip=example.com 
+Now, let's try by adding two commands http://10.10.85.42:8081/ping?ip=example.com; 'ls' 
+Here welcome the new file name "utech.db.sqlite". Let's cat the content of the file. 
+Hurrah, we found 2 usernames and their password hashes. Let's keep them because we have ssh port open we can try getting remote connection. 
+
+3.1 There is a database lying around, what is its filename? 
+From the above finding the database lying is "u****.**.*****e". 
+3.2 What is the first user's password hash? 
+The first user mentioned is r00t with hash "f******************************2" 
+3.3 What is the password associated with this hash? 
+By cracking the above hash using crackstation we got "n******" as password. 
+
+Task - 4 
+The root of all evil* 
+
+4.1 What are the first 9 characters of the root user's private SSH key? 
+Let's use the above credentials and get remote connection. 
+ssh r00t@10.10.85.42; password: n100906 
+By executing command "id" showed a brilliant thing. 
+User r00t belongs to docker group. Which helps in mounting and reading the host system root files. 
+Firstly, lets use GTFOBins and see docker. 
+from here we got a command to get docker root shell. Let's replace the image name "alpine" with our existing image file. 
+Run 'docker ps -a' to list all the existing images in docker. 
+Now, let’s change the shell command a little bit: 
+docker run -v /:/mnt --rm -it bash chroot /mnt sh 
+Hurrah! we got root shell. Let's now answer the question. Find the file id_rsa to get the private key. 
+The first 9 letters of the private key is "M******B".
