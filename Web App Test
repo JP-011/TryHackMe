@@ -1,0 +1,40 @@
+Enter the Ultratech room by using the following link: https://tryhackme.com/r/room/basicpentestingjt
+
+Read the instruction of the mission and start the target machine using the start machine icon on the top right.
+By clicking on ? icon you can download Openvpn configuration file which helps you in connecting and accessing into targets VPN connection.
+From here we can get target IP : 10.10.252.28 and Title : Web App Test
+
+Perform nmap scan to observe open ports and services.
+sudo nmap -Pn -n -p- 10.10.252.28 --min-rate 5000
+
+1.3 What is the name of the hidden directory on the web server(enter name without /)?
+By performing dirbuster scan on port 80 ( Apache) shows the hidden directories and files
+sudo dirb http://10.10.252.28
+By doing the above process "d*********t" is found as a hidden directory.
+
+Taking advantage of port 445 (SMB). Try to find the shares present with target machine.
+smbmap -H 10.10.252.28 - to see the shares
+smbclient //10.10.252.28/<sharename> - to read or enter the shares
+From a share named Anonymous. There's a hidden file staff.txt where it shows a message from kay to jan ( we can consider the followings names as usernames.)
+
+Perform brute forcing to find password.
+Now, let's do brute forcing the ssh logins using usernames as jan& kay and password list as rockyou.txt
+hydra -L userlist.txt -P /usr/share/wordlists/rockyou.txt ssh://10.10.252.28
+
+Yes! it's correct we cracked a user credentials its jan:a******
+
+Now let's dig deeper. After searching for any files in the directories, we found keys of user kay at /home/kay/.ssh/ location.
+
+Here we can think of accessing kay using private key. Let's make a copy of private key id_rsa on our host machine and try logging into kay.
+ssh -i kay_id_rsa kay@10.10.252.28
+
+Here's the new challenge, there's a passphrase protected to the key.
+
+It's time to use ssh2john which converts ssh keys into hash format that johntheripper can understand.
+
+ssh2john kay_id_rsa > kaykey
+john kaykey
+
+Yup! we got passphrase its "b*****x".
+
+Let's enter kay now. We can see a pass.bak file in /home/kay directory which contains kay's password its "h******************************************************$$"
